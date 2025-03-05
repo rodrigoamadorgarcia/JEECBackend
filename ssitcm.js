@@ -1,12 +1,11 @@
 require('dotenv').config();
-const express = require('express');  // Asegúrate de importar express
+const express = require('express');
 const mysql = require('mysql2');
 
-// Inicializar express
 const app = express();
-app.use(express.json());  // Middleware para procesar JSON en las solicitudes
+app.use(express.json()); // Permitir solicitudes JSON
 
-// Configuración de la base de datos
+// Configuración de la base de datos usando las variables de entorno
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -38,6 +37,6 @@ app.post('/usuarios/registrar', (req, res) => {
 
 // Configurar el puerto para ejecutar el servidor
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '::', () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
