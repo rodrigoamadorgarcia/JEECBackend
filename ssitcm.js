@@ -1,50 +1,42 @@
 require('dotenv').config();
 const express = require('express');
-const mysql = require('mysql2');
+const { Pool } = require('pg');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
+app.use(bodyParser.json());
 app.use(cors());
-app.use(express.json());
 
-// Configuración de la base de datos
-const db = mysql.createPool({
-    host: process.env.MYSQLHOST,
-    user: process.env.MYSQLUSER,
-    password: process.env.MYSQLPASSWORD,
-    database: process.env.MYSQLDATABASE,
-    port: process.env.MYSQLPORT
-});
-
-// Verificar conexión
-db.getConnection((err, connection) => {
-    if (err) {
-        console.error('❌ Error de conexión a MySQL:', err.message);
-    } else {
-        console.log('✅ Conectado a MySQL');
-        connection.release();
-    }
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+    ssl: { rejectUnauthorized: false } // Necesario para Render
 });
 
 // Endpoint para registrar usuario
-app.post('/usuarios/registrar', (req, res) => {
-    const { nombre, edad, primer_periodo } = req.body;
+app.post('/usuarios/registrar', async (req, res) => {
+    console.log("Datos recibidos:", req.body);
+    const { nombre, edad } = req.body;
 
     if (!nombre || !edad) {
         return res.status(400).json({ message: "Nombre y edad son requeridos" });
     }
 
-    const query = `INSERT INTO usuarios (nombre, edad, primer_periodo) VALUES (?, ?, ?)`;
-    db.query(query, [nombre, edad, primer_periodo || false], (err) => {
-        if (err) {
-            console.error('❌ Error al registrar usuario:', err.message);
-            return res.status(500).json({ message: "Error al registrar usuario", error: err.message });
-        }
-        res.status(201).json({ message: "✅ Usuario registrado exitosamente" });
-    });
+    try {
+        const query = 'INSERT INTO usuarios (nombre, edad) VALUES ($1, $2) RETURNING *';
+        const { rows } = await pool.query(query, [nombre, edad]);
+        res.status(201).json({ message: "✅ Usuario registrado exitosamente", usuario: rows[0] });
+    } catch (error) {
+        console.error('❌ Error al registrar usuario:', error.message);
+        res.status(500).json({ message: "Error al registrar usuario", error: error.message });
+    }
 });
 
-// Iniciar servidor
+// Configurar el puerto para ejecutar el servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
