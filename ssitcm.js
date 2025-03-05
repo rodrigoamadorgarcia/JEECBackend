@@ -1,6 +1,12 @@
 require('dotenv').config();
+const express = require('express');  // Asegúrate de importar express
 const mysql = require('mysql2');
 
+// Inicializar express
+const app = express();
+app.use(express.json());  // Middleware para procesar JSON en las solicitudes
+
+// Configuración de la base de datos
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -9,10 +15,7 @@ const dbConfig = {
     port: process.env.DB_PORT || 3306
 };
 
-
 const db = mysql.createPool(dbConfig);
-
-module.exports = db;
 
 // Endpoint para registrar usuario
 app.post('/usuarios/registrar', (req, res) => {
@@ -35,6 +38,6 @@ app.post('/usuarios/registrar', (req, res) => {
 
 // Configurar el puerto para ejecutar el servidor
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '::', () => {
+app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
